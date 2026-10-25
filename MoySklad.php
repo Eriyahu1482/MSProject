@@ -3,10 +3,7 @@ declare(strict_types=1);
 
 final class MoySklad
 {
-    /** @var string */
     private $baseUrl = 'https://api.moysklad.ru/api/remap/1.2';
-
-    /** @var string */
     private $token;
 
     public function __construct(string $token)
@@ -118,19 +115,15 @@ final class MoySklad
         return $this->request('POST', '/entity/customerorder', [], $body)['id'];
     }
 
-    /** Возвращает актуальный статус заказа из МС или null */
-    /** Возвращает актуальный статус заказа из МС или null */
+    /** Возвращает актуальный статус заказа из МС  */
     public function getOrderStateName(string $msId): ?string
     {
-        // Передаем параметр expand=state, чтобы МойСклад вернул не только ссылку, но и название статуса
-        $order = $this->request('GET', '/entity/customerorder/' . $msId, ['expand' => 'state']);
 
-        // Если статус есть, возвращаем его название
+        $order = $this->request('GET', '/entity/customerorder/' . $msId, ['expand' => 'state']);
         if (!empty($order['state']['name'])) {
             return (string)$order['state']['name'];
         }
 
-        // Страховка: если expand не сработал, ищем статус по ссылке в списке всех статусов
         if (!empty($order['state']['meta']['href'])) {
             $states = $this->getStates();
             foreach ($states as $st) {
@@ -143,7 +136,6 @@ final class MoySklad
         return null;
     }
 
-    /** Обновляет статус в МС */
     public function updateOrderState(string $msId, string $stateName): array
     {
         $states = $this->getStates();

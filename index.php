@@ -1,25 +1,20 @@
 <?php
 declare(strict_types=1);
 
-/* ========== Окружение ========== */
 error_reporting(E_ALL);
 ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 
 session_start();
 
-/* ========== Настройки ========== */
 $config = require __DIR__ . '/config.php';
 
-/* ========== Подключение к БД (mysqli) ========== */
 $dbCfg = $config['db'];
 $mysqli = new mysqli($dbCfg['host'], $dbCfg['user'], $dbCfg['pass'], $dbCfg['name']);
 if ($mysqli->connect_errno) {
     die('MySQL connect error: ' . $mysqli->connect_error);
 }
 $mysqli->set_charset('utf8mb4');
-
-/* ========== Модели ========== */
 require_once __DIR__ . '/Model.php';
 require_once __DIR__ . '/Order.php';
 require_once __DIR__ . '/MoySklad.php';
@@ -27,7 +22,6 @@ require_once __DIR__ . '/MoySklad.php';
 $orders = new Order($mysqli);
 $ms     = new MoySklad($config['ms']['token']);
 
-/* ========== Хелперы ========== */
 function e($s): string
 {
     return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
@@ -40,7 +34,6 @@ function csrf_token(): string
     }
     return $_SESSION['csrf'];
 }
-
 function csrf_check(): bool
 {
     return hash_equals($_SESSION['csrf'] ?? '', $_POST['csrf'] ?? '');
@@ -51,8 +44,6 @@ function flash(string $type, string $text): void
     $_SESSION['flash'][] = ['type' => $type, 'text' => $text];
 }
 
-/* ========== Получение списков для Select ========== */
-// Загружаем списки из МойСклад. Если API недоступен, форма отрендерится с пустыми списками.
 $organizations = [];
 $counterparties = [];
 $ms_error = null;
@@ -63,7 +54,6 @@ try {
     $ms_error = $ex->getMessage();
 }
 
-/* ========== Обработка POST ========== */
 $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -75,12 +65,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $org    = trim((string)($_POST['organization'] ?? ''));
     $agent  = trim((string)($_POST['agent'] ?? ''));
 
-    // Проверка базовых полей
     if ($number === '' || mb_strlen($number) > 50) {
         $errors[] = 'Номер заказа обязателен (до 50 символов).';
     }
-
-    // Проверка, что значения пришли именно из наших выпадающих списков
     $validOrgs   = array_column($organizations, 'name');
     $validAgents = array_column($counterparties, 'name');
 
@@ -91,12 +78,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Выберите агента из списка.';
     }
 
-    // === ПРОВЕРКА ДУБЛИКАТА ДО ВСТАВКИ В БД ===
     if (!$errors && $orders->exists($number)) {
         $errors[] = 'Заказ с номером «' . $number . '» уже существует.';
     }
 
-    // 1. Пишем в локальную БД
     $localId = 0;
     if (!$errors) {
         try {
@@ -110,7 +95,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // 2. Выгружаем в МойСклад
     if (!$errors) {
         try {
             $orgMeta   = $ms->findOrganization($org);

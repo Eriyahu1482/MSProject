@@ -5,7 +5,6 @@ require_once __DIR__ . '/Model.php';
 
 final class Order extends Model
 {
-    /** @var string */
     protected $table = 'orders';
 
     public function create(string $number, string $org, string $agent): int

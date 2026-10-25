@@ -1,12 +1,8 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Результат запроса — как в CI: row_object() / result_object()
- */
 class DBResult
 {
-    /** @var mysqli_result|null */
     private $result;
 
     public function __construct($result)
@@ -14,7 +10,6 @@ class DBResult
         $this->result = $result;
     }
 
-    /** Одна строка как объект (или null) */
     public function row_object()
     {
         if (!$this->result instanceof mysqli_result) {
@@ -24,7 +19,6 @@ class DBResult
         return $row === null ? null : $row;
     }
 
-    /** Массив строк-объектов */
     public function result_object(): array
     {
         if (!$this->result instanceof mysqli_result) {
@@ -43,12 +37,8 @@ class DBResult
     }
 }
 
-/**
- * Обёртка над mysqli в стиле $this->db->query(...)
- */
 class DB
 {
-    /** @var mysqli */
     private $mysqli;
 
     public function __construct(mysqli $mysqli)
@@ -65,7 +55,6 @@ class DB
         return new DBResult($res);
     }
 
-    /** Безопасное экранирование (включая кавычки) */
     public function escape(string $value): string
     {
         return "'" . $this->mysqli->real_escape_string($value) . "'";
@@ -94,12 +83,8 @@ class DB
 
 abstract class Model
 {
-    /** @var DB */
     protected $db;
-
-    /** @var string */
     protected $table = '';
-
     public function __construct(mysqli $mysqli)
     {
         $this->db = new DB($mysqli);

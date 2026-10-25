@@ -29,7 +29,6 @@ function e($s): string {
 $msgType = '';
 $msgText = '';
 
-/* ========== ОБРАБОТКА СМЕНЫ СТАТУСА (БЕЗ РЕДИРЕКТА) ========== */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update_status') {
     $orderId   = (int)($_POST['order_id'] ?? 0);
     $newStatus = trim((string)($_POST['status'] ?? ''));
@@ -48,10 +47,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
         $msgText = "Заказ «{$order->order_number}» не выгружен в МС, статус обновлён только локально.";
     } else {
         try {
-            // 1. Отправляем в МойСклад
             $ms->updateOrderState($order->ms_id, $newStatus);
 
-            // 2. Если ошибки нет, обновляем локальную БД
             $ordersModel->updateStatus($orderId, $newStatus);
 
             $msgType = 'ok';
@@ -64,7 +61,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
     }
 }
 
-/* ========== ПАГИНАЦИЯ ========== */
 $limit = 3;
 $page  = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 
@@ -77,8 +73,6 @@ if ($page > $totalPages && $totalPages > 0) {
 $offset = ($page - 1) * $limit;
 $orders = $ordersModel->getPaginated($limit, $offset);
 
-/* ========== АВТОСИНХРОНИЗАЦИЯ ИЗ МОЙСКЛАД ========== */
-// Подтягиваем актуальные статусы из МС, если их поменяли прямо в интерфейсе МС
 $syncError = null;
 foreach ($orders as $o) {
     if (empty($o->ms_id)) continue;
@@ -93,7 +87,6 @@ foreach ($orders as $o) {
     }
 }
 
-/* ========== СТАТУСЫ ДЛЯ СПИСКА ========== */
 $availableStates = [];
 try {
     $states = $ms->getStates();
@@ -144,7 +137,6 @@ try {
     <div class="card">
         <h1>Список заказов <span style="font-size:14px; color:#888; font-weight:normal;">(Всего: <?= $total ?>)</span></h1>
 
-        <!-- Вывод сообщения о результате -->
         <?php if ($msgText): ?>
             <div class="msg <?= e($msgType) ?>"><?= e($msgText) ?></div>
         <?php endif; ?>
